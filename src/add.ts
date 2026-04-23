@@ -316,7 +316,7 @@ export async function promptForAgents(
   const validAgents = choices.map((c) => c.value);
 
   // Default agents to pre-select when no valid history exists
-  const defaultAgents: AgentType[] = ['claude-code', 'opencode', 'codex'];
+  const defaultAgents: AgentType[] = ['claude-code', 'opencode'];
   const defaultValues = defaultAgents.filter((a) => validAgents.includes(a));
 
   let initialValues: AgentType[] = [];
@@ -1853,6 +1853,7 @@ async function promptForFindSkills(
       await dismissPrompt('findSkillsPrompt');
 
       // Filter out replit from target agents
+      // @ts-expect-error
       const findSkillsAgents = targetAgents?.filter((a) => a !== 'replit');
 
       // Skip if no valid agents remain after filtering

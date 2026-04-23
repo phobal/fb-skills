@@ -10,8 +10,7 @@
   "files": [
     "dist",
     "bin",
-    "README.md",
-    "ThirdPartyNoticeText.txt"
+    "README.md"
   ],
   "scripts": {
     "build": "tsx scripts/generate-licenses.ts && obuild",
