@@ -156,14 +156,16 @@ export class WellKnownProvider implements HostProvider {
           if (allValid) {
             return { index, resolvedBaseUrl: resolvedBase, resolvedWellKnownPath: wellKnownPath };
           }
-        } catch {
+        } catch (err) {
           // Try next URL
+          console.error(`[wellknown] fetch failed for ${indexUrl}:`, err);
           continue;
         }
       }
 
       return null;
-    } catch {
+    } catch (err) {
+      console.error(`[wellknown] fetchIndex failed for ${baseUrl}:`, err);
       return null;
     }
   }
@@ -326,6 +328,7 @@ export class WellKnownProvider implements HostProvider {
 
   /**
    * Fetch all skills from a well-known endpoint.
+   * Uses batching to avoid overwhelming the server with too many concurrent connections.
    */
   async fetchAllSkills(url: string): Promise<WellKnownSkill[]> {
     try {
@@ -336,13 +339,23 @@ export class WellKnownProvider implements HostProvider {
 
       const { index, resolvedBaseUrl, resolvedWellKnownPath } = result;
 
-      // Fetch all skills in parallel
-      const skillPromises = index.skills.map((entry: WellKnownSkillEntry) =>
-        this.fetchSkillByEntry(resolvedBaseUrl, entry, resolvedWellKnownPath)
-      );
-      const results = await Promise.all(skillPromises);
+      // Batch size to avoid overwhelming the server on Windows (select() fd limit ~512)
+      const BATCH_SIZE = 50;
+      const allSkills: WellKnownSkill[] = [];
 
-      return results.filter((s: WellKnownSkill | null): s is WellKnownSkill => s !== null);
+      // Fetch skills in batches
+      for (let i = 0; i < index.skills.length; i += BATCH_SIZE) {
+        const batch = index.skills.slice(i, i + BATCH_SIZE);
+        const skillPromises = batch.map((entry: WellKnownSkillEntry) =>
+          this.fetchSkillByEntry(resolvedBaseUrl, entry, resolvedWellKnownPath)
+        );
+        const results = await Promise.all(skillPromises);
+        allSkills.push(
+          ...results.filter((s: WellKnownSkill | null): s is WellKnownSkill => s !== null)
+        );
+      }
+
+      return allSkills;
     } catch {
       return [];
     }
