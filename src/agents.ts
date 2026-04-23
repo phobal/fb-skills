@@ -331,7 +331,7 @@ export const agents: Record<AllowAgentTypes, AgentConfig> = {
   // },
   'qwen-code': {
     name: 'qwen-code',
-    displayName: 'AICoder',
+    displayName: 'AI Coder',
     skillsDir: '.qwen/skills',
     globalSkillsDir: join(home, '.qwen/skills'),
     detectInstalled: async () => {
