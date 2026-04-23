@@ -779,6 +779,33 @@ async function handleWellKnownSkills(
     });
   }
 
+  // Track installations on the well-known server (if it supports tracking)
+  if (successful.length > 0) {
+    const parsedUrl = new URL(url);
+    const serverBase = `${parsedUrl.protocol}//${parsedUrl.host}`;
+
+    // Send tracking for each successfully installed skill
+    for (const skill of selectedSkills) {
+      const successfulSkillNames = new Set(successful.map((r) => r.skill));
+      if (successfulSkillNames.has(skill.installName) && skill.indexEntry?.skill_id) {
+        try {
+          // Fire and forget - don't wait for response
+          fetch(
+            `${serverBase}/api/public/skills/${skill.indexEntry.skill_id}/download?event=install`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+            }
+          ).catch(() => {
+            // Ignore tracking errors - don't fail installation
+          });
+        } catch {
+          // Ignore tracking errors
+        }
+      }
+    }
+  }
+
   // Add to skill lock file for update tracking (only for global installs)
   if (successful.length > 0 && installGlobally) {
     const successfulSkillNames = new Set(successful.map((r) => r.skill));

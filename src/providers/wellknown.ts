@@ -19,6 +19,8 @@ export interface WellKnownSkillEntry {
   description: string;
   /** Array of all files in the skill directory. */
   files: string[];
+  /** Skill ID for tracking installations */
+  skill_id?: number;
 }
 
 /**
