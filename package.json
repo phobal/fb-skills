@@ -13,7 +13,7 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsx scripts/generate-licenses.ts && obuild",
+    "build": "tsx scripts/generate-config.ts && tsx scripts/generate-licenses.ts && obuild",
     "generate-licenses": "tsx scripts/generate-licenses.ts",
     "dev": "tsx src/cli.ts",
     "exec:test": "tsx scripts/execute-tests.ts",
@@ -111,6 +111,7 @@
   },
   "packageManager": "pnpm@10.17.1",
   "dependencies": {
+    "fflate": "^0.8.2",
     "yaml": "^2.8.3"
   }
 }

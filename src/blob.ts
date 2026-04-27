@@ -13,6 +13,8 @@
 import { parseFrontmatter } from './frontmatter.ts';
 import { sanitizeMetadata } from './sanitize.ts';
 import type { Skill } from './types.ts';
+import { unzip } from 'fflate';
+import { CUSTOM_SKILLS_SERVER_BASE_URL } from './config-generated.ts';
 
 // ─── Types ───
 
@@ -264,8 +266,8 @@ async function fetchSkillMdContent(
 }
 
 /**
- * Fetch a skill's full file contents from the skills.sh download API.
- * Returns the files array and content hash, or null on failure.
+ * Fetch a skill's full file contents from the skills.sh download API as ZIP.
+ * Unzips and returns the files array and content hash, or null on failure.
  */
 async function fetchSkillDownload(
   source: string,
@@ -275,10 +277,105 @@ async function fetchSkillDownload(
     const [owner, repo] = source.split('/');
     const url = `${DOWNLOAD_BASE_URL}/api/download/${encodeURIComponent(owner!)}/${encodeURIComponent(repo!)}/${encodeURIComponent(slug)}`;
     const response = await fetch(url, {
+      headers: { Accept: 'application/zip' },
       signal: AbortSignal.timeout(FETCH_TIMEOUT),
     });
     if (!response.ok) return null;
-    return (await response.json()) as SkillDownloadResponse;
+
+    // Get ZIP as ArrayBuffer
+    const arrayBuffer = await response.arrayBuffer();
+    const uint8Array = new Uint8Array(arrayBuffer);
+
+    // Unzip using fflate
+    const unzipped: Record<string, Uint8Array> = await new Promise((resolve, reject) => {
+      unzip(uint8Array, (err, data) => {
+        if (err) reject(err);
+        else resolve(data);
+      });
+    });
+
+    // Convert to SkillDownloadResponse format
+    const files: SkillSnapshotFile[] = [];
+    let hash = 0;
+
+    for (const [path, contents] of Object.entries(unzipped)) {
+      // Skip directories and hidden files
+      if (!path || path.includes('__MACOSX') || path.startsWith('.')) continue;
+
+      // Convert Uint8Array to string
+      const text = new TextDecoder().decode(contents);
+      files.push({ path, contents: text });
+
+      // Compute simple hash from file contents
+      for (let i = 0; i < text.length; i++) {
+        hash = ((hash << 5) - hash + text.charCodeAt(i)) | 0;
+      }
+    }
+
+    return {
+      files,
+      hash: hash.toString(16),
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Fetch a skill from a custom server URL.
+ * The server URL is configured via CUSTOME_SKILLS_SERVER_BASE_URL at build time.
+ */
+export async function fetchSkillFromCustomServer(
+  author: string,
+  name: string,
+  version: string
+): Promise<SkillDownloadResponse | null> {
+  if (!CUSTOM_SKILLS_SERVER_BASE_URL) {
+    return null;
+  }
+
+  try {
+    const url = `${CUSTOM_SKILLS_SERVER_BASE_URL}/api/public/skills/download/${encodeURIComponent(author)}/${encodeURIComponent(name)}/${encodeURIComponent(version)}`;
+    const response = await fetch(url, {
+      headers: { Accept: 'application/zip' },
+      signal: AbortSignal.timeout(FETCH_TIMEOUT),
+    });
+    if (!response.ok) return null;
+
+    // Get ZIP as ArrayBuffer
+    const arrayBuffer = await response.arrayBuffer();
+    const uint8Array = new Uint8Array(arrayBuffer);
+
+    // Unzip using fflate
+    const unzipped: Record<string, Uint8Array> = await new Promise((resolve, reject) => {
+      unzip(uint8Array, (err, data) => {
+        if (err) reject(err);
+        else resolve(data);
+      });
+    });
+
+    // Convert to SkillDownloadResponse format
+    const files: SkillSnapshotFile[] = [];
+    let hash = 0;
+
+    for (const [path, contents] of Object.entries(unzipped)) {
+      // Skip directories and hidden files
+      if (!path || path.includes('__MACOSX') || path.startsWith('.')) continue;
+
+      // Convert Uint8Array to string
+      const text = new TextDecoder().decode(contents);
+      files.push({ path, contents: text });
+
+      // Compute simple hash from file contents
+      for (let i = 0; i < text.length; i++) {
+        hash = ((hash << 5) - hash + text.charCodeAt(i)) | 0;
+      }
+    }
+
+    return {
+      files,
+      hash: hash.toString(16),
+    };
   } catch {
     return null;
   }

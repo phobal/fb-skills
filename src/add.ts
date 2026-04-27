@@ -61,12 +61,55 @@ import type { Skill, AgentType } from './types.ts';
 import {
   tryBlobInstall,
   getSkillFolderHashFromTree,
+  fetchSkillFromCustomServer,
   type BlobSkill,
   type BlobInstallResult,
 } from './blob.ts';
+import { CUSTOM_SKILLS_SERVER_BASE_URL } from './config-generated.ts';
 import packageJson from '../package.json' with { type: 'json' };
 export function initTelemetry(version: string): void {
   setVersion(version);
+}
+
+// ─── Custom Server Helpers ───
+
+/**
+ * Check if a source is a custom server skill reference.
+ * Format: author/name@version or author/name
+ * Returns false for git@ URLs, GitHub URLs, etc.
+ */
+function isCustomServerSource(source: string): boolean {
+  // git@ URLs are SSH, not custom server
+  if (source.startsWith('git@')) return false;
+  // http/https URLs are regular remotes
+  if (source.startsWith('http://') || source.startsWith('https://')) return false;
+  // If it doesn't contain /, it might be a skill name on custom server
+  if (!source.includes('/')) return true;
+  // If it contains @ but not git@, could be author/name@version
+  if (source.includes('@')) return true;
+  // If CUSTOM_SKILLS_SERVER_BASE_URL is configured and source looks like author/name,
+  // treat it as custom server source
+  if (CUSTOM_SKILLS_SERVER_BASE_URL) return true;
+  return false;
+}
+
+/**
+ * Parse a custom server skill reference.
+ * Format: author/name@version or author/name
+ * Returns null if not a valid format.
+ */
+function parseCustomServerSkillRef(
+  source: string
+): { author: string; name: string; version: string } | null {
+  // Format: author/name@version or author/name
+  const match = source.match(/^(.+?)\/(.+?)(?:@(.+))?$/);
+  if (!match) return null;
+
+  return {
+    author: match[1]!,
+    name: match[2]!,
+    version: match[3] || '1.0.0', // Default version
+  };
 }
 
 // ─── Security Advisory ───
@@ -943,6 +986,167 @@ export async function runAdd(args: string[], options: AddOptions = {}): Promise<
     console.log(`    ${pc.cyan('npx skills add')} ${pc.yellow('vercel-labs/agent-skills')}`);
     console.log();
     process.exit(1);
+  }
+
+  // Handle custom server source (e.g., author/name@version)
+  if (CUSTOM_SKILLS_SERVER_BASE_URL && isCustomServerSource(source)) {
+    const skillRef = parseCustomServerSkillRef(source);
+    if (skillRef) {
+      console.log();
+      p.intro(pc.bgCyan(pc.black(' skills ')));
+
+      const spinner = p.spinner();
+      spinner.start(
+        `Fetching ${skillRef.author}/${skillRef.name}@${skillRef.version} from custom server...`
+      );
+
+      try {
+        const downloadResult = await fetchSkillFromCustomServer(
+          skillRef.author,
+          skillRef.name,
+          skillRef.version
+        );
+        if (!downloadResult) {
+          spinner.stop(pc.red('Failed to download skill'));
+          process.exit(1);
+        }
+
+        // Build BlobSkill
+        const blobSkill: BlobSkill = {
+          name: `${skillRef.author}/${skillRef.name}`,
+          description: '',
+          path: '',
+          rawContent: '',
+          metadata: {},
+          files: downloadResult.files,
+          snapshotHash: downloadResult.hash,
+          repoPath: `${skillRef.author}/${skillRef.name}`,
+        };
+
+        spinner.stop(pc.green('Skill downloaded'));
+
+        // Detect installed agents
+        const installedAgents = await detectInstalledAgents();
+
+        // Select target agents
+        let targetAgents: AgentType[];
+        if (installedAgents.length === 0) {
+          p.log.error('No agents found');
+          process.exit(1);
+        } else if (installedAgents.length === 1 || options.yes) {
+          targetAgents = ensureUniversalAgents(installedAgents);
+          if (installedAgents.length === 1) {
+            p.log.info(`Installing to: ${pc.cyan(agents[installedAgents[0]!].displayName)}`);
+          } else {
+            p.log.info(
+              `Installing to: ${installedAgents.map((a) => pc.cyan(agents[a].displayName)).join(', ')}`
+            );
+          }
+        } else if (options.agent && options.agent.length > 0) {
+          targetAgents = options.agent.map((a) => a as AgentType);
+        } else {
+          const selected = await selectAgentsInteractive({ global: options.global });
+          if (p.isCancel(selected)) {
+            p.cancel('Installation cancelled');
+            process.exit(0);
+          }
+          targetAgents = selected as AgentType[];
+        }
+
+        // Determine install scope (project vs global)
+        let installGlobally = options.global ?? false;
+        const supportsGlobal = targetAgents.some((a) => agents[a].globalSkillsDir !== undefined);
+        if (options.global === undefined && !options.yes && supportsGlobal) {
+          const scope = await p.select({
+            message: 'Installation scope',
+            options: [
+              { value: false, label: 'Project', hint: 'Install in current directory' },
+              { value: true, label: 'Global', hint: 'Install in home directory' },
+            ],
+          });
+          if (p.isCancel(scope)) {
+            p.cancel('Installation cancelled');
+            process.exit(0);
+          }
+          installGlobally = scope as boolean;
+        }
+
+        // Determine install mode (symlink vs copy)
+        let installMode: InstallMode = options.copy ? 'copy' : 'symlink';
+        const uniqueDirs = new Set(targetAgents.map((a) => agents[a].skillsDir));
+        if (!options.copy && !options.yes && uniqueDirs.size > 1) {
+          const modeChoice = await p.select({
+            message: 'Installation method',
+            options: [
+              { value: 'symlink', label: 'Symlink (Recommended)', hint: 'Single source of truth' },
+              { value: 'copy', label: 'Copy to all agents', hint: 'Independent copies' },
+            ],
+          });
+          if (p.isCancel(modeChoice)) {
+            p.cancel('Installation cancelled');
+            process.exit(0);
+          }
+          installMode = modeChoice as InstallMode;
+        } else if (uniqueDirs.size <= 1) {
+          installMode = 'copy';
+        }
+
+        // Build and show summary
+        const cwd = process.cwd();
+        const summaryLines: string[] = [];
+        const canonicalPath = getCanonicalPath(blobSkill.name, { global: installGlobally });
+        const shortCanonical = shortenPath(canonicalPath, cwd);
+        summaryLines.push(`${pc.cyan(shortCanonical)}`);
+        summaryLines.push(...buildAgentSummaryLines(targetAgents, installMode));
+        summaryLines.push(`  ${pc.dim('files:')} ${blobSkill.files.length}`);
+        console.log();
+        p.note(summaryLines.join('\n'), 'Installation Summary');
+
+        // Confirm installation
+        if (!options.yes) {
+          const confirmed = await p.confirm({ message: 'Proceed with installation?' });
+          if (p.isCancel(confirmed) || !confirmed) {
+            p.cancel('Installation cancelled');
+            process.exit(0);
+          }
+        }
+
+        // Install
+        spinner.start('Installing skills...');
+        const results: { skill: string; agent: AgentType; success: boolean; error?: string }[] = [];
+
+        for (const agent of targetAgents) {
+          const result = await installBlobSkillForAgent(
+            { installName: blobSkill.name, files: blobSkill.files },
+            agent,
+            { global: installGlobally, mode: installMode }
+          );
+          results.push({
+            skill: blobSkill.name,
+            agent,
+            success: result.success,
+            error: result.error,
+          });
+        }
+
+        spinner.stop();
+        console.log();
+        for (const r of results) {
+          if (r.success) {
+            console.log(`  ${pc.green('✓')} ${pc.dim(agents[r.agent].displayName)}: ${r.skill}`);
+          } else {
+            console.log(`  ${pc.red('✗')} ${pc.dim(agents[r.agent].displayName)}: ${r.error}`);
+          }
+        }
+
+        const failedCount = results.filter((r) => !r.success).length;
+        p.outro(failedCount === 0 ? pc.green('Done!') : pc.red(`${failedCount} failed`));
+        return;
+      } catch (err) {
+        spinner.stop(pc.red(`Error: ${err}`));
+        process.exit(1);
+      }
+    }
   }
 
   // --all implies --skill '*' and --agent '*' and -y
