@@ -54,10 +54,10 @@ export async function cloneRepo(url: string, ref?: string): Promise<string> {
 
     if (isTimeout) {
       throw new GitCloneError(
-        `Clone timed out after 60s. This often happens with private repos that require authentication.\n` +
-          `  Ensure you have access and your SSH keys or credentials are configured:\n` +
-          `  - For SSH: ssh-add -l (to check loaded keys)\n` +
-          `  - For HTTPS: gh auth status (if using GitHub CLI)`,
+        `克隆在60秒后超时。这通常发生在需要认证的私有仓库上。\n` +
+          `  确保您有访问权限且 SSH 密钥或凭据已配置:\n` +
+          `  - SSH: ssh-add -l (检查已加载的密钥)\n` +
+          `  - HTTPS: gh auth status (如果使用 GitHub CLI)`,
         url,
         true,
         false
@@ -66,17 +66,17 @@ export async function cloneRepo(url: string, ref?: string): Promise<string> {
 
     if (isAuthError) {
       throw new GitCloneError(
-        `Authentication failed for ${url}.\n` +
-          `  - For private repos, ensure you have access\n` +
-          `  - For SSH: Check your keys with 'ssh -T git@github.com'\n` +
-          `  - For HTTPS: Run 'gh auth login' or configure git credentials`,
+        `${url} 认证失败。\n` +
+          `  - 对于私有仓库，确保您有访问权限\n` +
+          `  - SSH: 使用 'ssh -T git@github.com' 检查密钥\n` +
+          `  - HTTPS: 运行 'gh auth login' 或配置 git 凭据`,
         url,
         false,
         true
       );
     }
 
-    throw new GitCloneError(`Failed to clone ${url}: ${errorMessage}`, url, false, false);
+    throw new GitCloneError(`克隆 ${url} 失败: ${errorMessage}`, url, false, false);
   }
 }
 

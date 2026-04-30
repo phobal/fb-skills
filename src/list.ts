@@ -78,8 +78,8 @@ export async function runList(args: string[]): Promise<void> {
     const invalidAgents = options.agent.filter((a) => !validAgents.includes(a));
 
     if (invalidAgents.length > 0) {
-      console.log(`${YELLOW}Invalid agents: ${invalidAgents.join(', ')}${RESET}`);
-      console.log(`${DIM}Valid agents: ${validAgents.join(', ')}${RESET}`);
+      console.log(`${YELLOW}无效的 agents: ${invalidAgents.join(', ')}${RESET}`);
+      console.log(`${DIM}有效的 agents: ${validAgents.join(', ')}${RESET}`);
       process.exit(1);
     }
 
@@ -107,18 +107,18 @@ export async function runList(args: string[]): Promise<void> {
   const lockedSkills = await getAllLockedSkills();
 
   const cwd = process.cwd();
-  const scopeLabel = scope ? 'Global' : 'Project';
+  const scopeLabel = scope ? '全局' : '项目';
 
   if (installedSkills.length === 0) {
     if (options.json) {
       console.log('[]');
       return;
     }
-    console.log(`${DIM}No ${scopeLabel.toLowerCase()} skills found.${RESET}`);
+    console.log(`${DIM}未找到 ${scopeLabel.toLowerCase()} 技能。${RESET}`);
     if (scope) {
-      console.log(`${DIM}Try listing project skills without -g${RESET}`);
+      console.log(`${DIM}尝试使用 -g 列出项目技能${RESET}`);
     } else {
-      console.log(`${DIM}Try listing global skills with -g${RESET}`);
+      console.log(`${DIM}尝试使用 -g 列出全局技能${RESET}`);
     }
     return;
   }
@@ -127,15 +127,14 @@ export async function runList(args: string[]): Promise<void> {
     const prefix = indent ? '  ' : '';
     const shortPath = shortenPath(skill.canonicalPath, cwd);
     const agentNames = skill.agents.map((a) => agents[a].displayName);
-    const agentInfo =
-      skill.agents.length > 0 ? formatList(agentNames) : `${YELLOW}not linked${RESET}`;
+    const agentInfo = skill.agents.length > 0 ? formatList(agentNames) : `${YELLOW}未链接${RESET}`;
     console.log(
       `${prefix}${CYAN}${sanitizeMetadata(skill.name)}${RESET} ${DIM}${shortPath}${RESET}`
     );
     console.log(`${prefix}  ${DIM}Agents:${RESET} ${agentInfo}`);
   }
 
-  console.log(`${BOLD}${scopeLabel} Skills${RESET}`);
+  console.log(`${BOLD}${scopeLabel} 技能${RESET}`);
   console.log();
 
   // Group skills by plugin
@@ -179,7 +178,7 @@ export async function runList(args: string[]): Promise<void> {
 
     // Print ungrouped skills if any exist
     if (ungroupedSkills.length > 0) {
-      console.log(`${BOLD}General${RESET}`);
+      console.log(`${BOLD}常规${RESET}`);
       for (const skill of ungroupedSkills) {
         printSkill(skill, true);
       }

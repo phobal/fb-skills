@@ -224,7 +224,7 @@ export async function installSkillForAgent(
       success: false,
       path: '',
       mode: options.mode ?? 'symlink',
-      error: `${agent.displayName} does not support global skill installation`,
+      error: `${agent.displayName} 不支持全局技能安装`,
     };
   }
 
@@ -248,7 +248,7 @@ export async function installSkillForAgent(
       success: false,
       path: agentDir,
       mode: installMode,
-      error: 'Invalid skill name: potential path traversal detected',
+      error: '无效的技能名称：检测到潜在路径遍历',
     };
   }
 
@@ -257,7 +257,7 @@ export async function installSkillForAgent(
       success: false,
       path: agentDir,
       mode: installMode,
-      error: 'Invalid skill name: potential path traversal detected',
+      error: '无效的技能名称：检测到潜在路径遍历',
     };
   }
 
@@ -317,7 +317,7 @@ export async function installSkillForAgent(
       success: false,
       path: agentDir,
       mode: installMode,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error instanceof Error ? error.message : '未知错误',
     };
   }
 }
@@ -366,7 +366,7 @@ async function copyDirectory(src: string, dest: string): Promise<void> {
               (err as NodeJS.ErrnoException).code === 'ENOENT' &&
               entry.isSymbolicLink()
             ) {
-              console.warn(`Skipping broken symlink: ${srcPath}`);
+              console.warn(`跳过损坏的符号链接: ${srcPath}`);
             } else {
               throw err;
             }
@@ -420,7 +420,7 @@ export function getInstallPath(
   const installPath = join(targetBase, sanitized);
 
   if (!isPathSafe(targetBase, installPath)) {
-    throw new Error('Invalid skill name: potential path traversal detected');
+    throw new Error('无效的技能名称：检测到潜在路径遍历');
   }
 
   return installPath;
@@ -438,7 +438,7 @@ export function getCanonicalPath(
   const canonicalPath = join(canonicalBase, sanitized);
 
   if (!isPathSafe(canonicalBase, canonicalPath)) {
-    throw new Error('Invalid skill name: potential path traversal detected');
+    throw new Error('无效的技能名称：检测到潜在路径遍历');
   }
 
   return canonicalPath;
@@ -466,7 +466,7 @@ export async function installRemoteSkillForAgent(
       success: false,
       path: '',
       mode: installMode,
-      error: `${agent.displayName} does not support global skill installation`,
+      error: `${agent.displayName} 不支持全局技能安装`,
     };
   }
 
@@ -487,7 +487,7 @@ export async function installRemoteSkillForAgent(
       success: false,
       path: agentDir,
       mode: installMode,
-      error: 'Invalid skill name: potential path traversal detected',
+      error: '无效的技能名称：检测到潜在路径遍历',
     };
   }
 
@@ -496,7 +496,7 @@ export async function installRemoteSkillForAgent(
       success: false,
       path: agentDir,
       mode: installMode,
-      error: 'Invalid skill name: potential path traversal detected',
+      error: '无效的技能名称：检测到潜在路径遍历',
     };
   }
 
@@ -557,7 +557,7 @@ export async function installRemoteSkillForAgent(
       success: false,
       path: agentDir,
       mode: installMode,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error instanceof Error ? error.message : '未知错误',
     };
   }
 }
@@ -585,7 +585,7 @@ export async function installWellKnownSkillForAgent(
       success: false,
       path: '',
       mode: installMode,
-      error: `${agent.displayName} does not support global skill installation`,
+      error: `${agent.displayName} 不支持全局技能安装`,
     };
   }
 
@@ -606,7 +606,7 @@ export async function installWellKnownSkillForAgent(
       success: false,
       path: agentDir,
       mode: installMode,
-      error: 'Invalid skill name: potential path traversal detected',
+      error: '无效的技能名称：检测到潜在路径遍历',
     };
   }
 
@@ -615,7 +615,7 @@ export async function installWellKnownSkillForAgent(
       success: false,
       path: agentDir,
       mode: installMode,
-      error: 'Invalid skill name: potential path traversal detected',
+      error: '无效的技能名称：检测到潜在路径遍历',
     };
   }
 
@@ -694,7 +694,7 @@ export async function installWellKnownSkillForAgent(
       success: false,
       path: agentDir,
       mode: installMode,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error instanceof Error ? error.message : '未知错误',
     };
   }
 }
@@ -719,7 +719,7 @@ export async function installBlobSkillForAgent(
       success: false,
       path: '',
       mode: installMode,
-      error: `${agent.displayName} does not support global skill installation`,
+      error: `${agent.displayName} 不支持全局技能安装`,
     };
   }
 
@@ -734,7 +734,7 @@ export async function installBlobSkillForAgent(
       success: false,
       path: agentDir,
       mode: installMode,
-      error: 'Invalid skill name: potential path traversal detected',
+      error: '无效的技能名称：检测到潜在路径遍历',
     };
   }
 
@@ -743,7 +743,7 @@ export async function installBlobSkillForAgent(
       success: false,
       path: agentDir,
       mode: installMode,
-      error: 'Invalid skill name: potential path traversal detected',
+      error: '无效的技能名称：检测到潜在路径遍历',
     };
   }
 
@@ -806,7 +806,7 @@ export async function installBlobSkillForAgent(
       success: false,
       path: agentDir,
       mode: installMode,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error instanceof Error ? error.message : '未知错误',
     };
   }
 }

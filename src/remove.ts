@@ -26,7 +26,7 @@ export async function removeCommand(skillNames: string[], options: RemoveOptions
 
   const spinner = p.spinner();
 
-  spinner.start('Scanning for installed skills...');
+  spinner.start('正在扫描已安装的技能...');
   const skillNamesSet = new Set<string>();
 
   const scanDir = async (dir: string) => {
@@ -59,10 +59,10 @@ export async function removeCommand(skillNames: string[], options: RemoveOptions
   }
 
   const installedSkills = Array.from(skillNamesSet).sort();
-  spinner.stop(`Found ${installedSkills.length} unique installed skill(s)`);
+  spinner.stop(`找到 ${installedSkills.length} 个已安装的独特技能`);
 
   if (installedSkills.length === 0) {
-    p.outro(pc.yellow('No skills found to remove.'));
+    p.outro(pc.yellow('未找到要移除的技能。'));
     return;
   }
 
@@ -72,8 +72,8 @@ export async function removeCommand(skillNames: string[], options: RemoveOptions
     const invalidAgents = options.agent.filter((a) => !validAgents.includes(a));
 
     if (invalidAgents.length > 0) {
-      p.log.error(`Invalid agents: ${invalidAgents.join(', ')}`);
-      p.log.info(`Valid agents: ${validAgents.join(', ')}`);
+      p.log.error(`无效的 agents: ${invalidAgents.join(', ')}`);
+      p.log.info(`有效的 agents: ${validAgents.join(', ')}`);
       process.exit(1);
     }
   }
@@ -88,7 +88,7 @@ export async function removeCommand(skillNames: string[], options: RemoveOptions
     );
 
     if (selectedSkills.length === 0) {
-      p.log.error(`No matching skills found for: ${skillNames.join(', ')}`);
+      p.log.error(`未找到匹配的技能: ${skillNames.join(', ')}`);
       return;
     }
   } else {
@@ -98,13 +98,13 @@ export async function removeCommand(skillNames: string[], options: RemoveOptions
     }));
 
     const selected = await p.multiselect({
-      message: `Select skills to remove ${pc.dim('(space to toggle)')}`,
+      message: `选择要移除的技能 ${pc.dim('(空格切换)')}`,
       options: choices,
       required: true,
     });
 
     if (p.isCancel(selected)) {
-      p.cancel('Removal cancelled');
+      p.cancel('已取消移除');
       process.exit(0);
     }
 
@@ -118,28 +118,28 @@ export async function removeCommand(skillNames: string[], options: RemoveOptions
     // When removing, we should target all known agents to ensure
     // ghost symlinks are cleaned up, even if the agent is not detected.
     targetAgents = Object.keys(agents) as AgentType[];
-    spinner.stop(`Targeting ${targetAgents.length} potential agent(s)`);
+    spinner.stop(`正在定位 ${targetAgents.length} 个潜在 agent(s)`);
   }
 
   if (!options.yes) {
     console.log();
-    p.log.info('Skills to remove:');
+    p.log.info('要移除的技能:');
     for (const skill of selectedSkills) {
       p.log.message(`  ${pc.red('•')} ${skill}`);
     }
     console.log();
 
     const confirmed = await p.confirm({
-      message: `Are you sure you want to uninstall ${selectedSkills.length} skill(s)?`,
+      message: `确定要卸载 ${selectedSkills.length} 个技能吗?`,
     });
 
     if (p.isCancel(confirmed) || !confirmed) {
-      p.cancel('Removal cancelled');
+      p.cancel('已取消移除');
       process.exit(0);
     }
   }
 
-  spinner.start('Removing skills...');
+  spinner.start('正在移除技能...');
 
   const results: {
     skill: string;
@@ -231,7 +231,7 @@ export async function removeCommand(skillNames: string[], options: RemoveOptions
     }
   }
 
-  spinner.stop('Removal process complete');
+  spinner.stop('移除完成');
 
   const successful = results.filter((r) => r.success);
   const failed = results.filter((r) => !r.success);
@@ -261,18 +261,18 @@ export async function removeCommand(skillNames: string[], options: RemoveOptions
   }
 
   if (successful.length > 0) {
-    p.log.success(pc.green(`Successfully removed ${successful.length} skill(s)`));
+    p.log.success(pc.green(`成功移除 ${successful.length} 个技能`));
   }
 
   if (failed.length > 0) {
-    p.log.error(pc.red(`Failed to remove ${failed.length} skill(s)`));
+    p.log.error(pc.red(`移除 ${failed.length} 个技能失败`));
     for (const r of failed) {
       p.log.message(`  ${pc.red('✗')} ${r.skill}: ${r.error}`);
     }
   }
 
   console.log();
-  p.outro(pc.green('Done!'));
+  p.outro(pc.green('完成!'));
 }
 
 /**

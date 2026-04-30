@@ -117,15 +117,15 @@ function parseCustomServerSkillRef(
 function riskLabel(risk: string): string {
   switch (risk) {
     case 'critical':
-      return pc.red(pc.bold('Critical Risk'));
+      return pc.red(pc.bold('极高风险'));
     case 'high':
-      return pc.red('High Risk');
+      return pc.red('高风险');
     case 'medium':
-      return pc.yellow('Med Risk');
+      return pc.yellow('中风险');
     case 'low':
-      return pc.green('Low Risk');
+      return pc.green('低风险');
     case 'safe':
-      return pc.green('Safe');
+      return pc.green('安全');
     default:
       return pc.dim('--');
   }
@@ -134,7 +134,7 @@ function riskLabel(risk: string): string {
 function socketLabel(audit: PartnerAudit | undefined): string {
   if (!audit) return pc.dim('--');
   const count = audit.alerts ?? 0;
-  return count > 0 ? pc.red(`${count} alert${count !== 1 ? 's' : ''}`) : pc.green('0 alerts');
+  return count > 0 ? pc.red(`${count} 个警报`) : pc.green('0 个警报');
 }
 
 /** Pad a string to a given visible width (ignoring ANSI escape codes). */
@@ -437,7 +437,7 @@ async function selectAgentsInteractive(options: {
     : [];
 
   const selected = await searchMultiselect({
-    message: 'Which agents do you want to install to?',
+    message: '选择要安装到的 agents?',
     items: otherChoices,
     initialSelected,
     lockedSection: universalSection,
@@ -481,44 +481,44 @@ async function handleWellKnownSkills(
   options: AddOptions,
   spinner: ReturnType<typeof p.spinner>
 ): Promise<void> {
-  spinner.start('Discovering skills from well-known endpoint...');
+  spinner.start('从已知端点发现技能...');
 
   // Fetch all skills from the well-known endpoint
   const skills = await wellKnownProvider.fetchAllSkills(url);
 
   if (skills.length === 0) {
-    spinner.stop(pc.red('No skills found'));
+    spinner.stop(pc.red('未找到技能'));
     p.outro(
       pc.red(
-        'No skills found at this URL. Make sure the server has a /.well-known/agent-skills/index.json or /.well-known/skills/index.json file.'
+        '此 URL 未找到技能。请确保服务器上有 /.well-known/agent-skills/index.json 或 /.well-known/skills/index.json 文件。'
       )
     );
     process.exit(1);
   }
 
-  spinner.stop(`Found ${pc.green(skills.length)} skill${skills.length > 1 ? 's' : ''}`);
+  spinner.stop(`找到 ${pc.green(skills.length)} 个技能`);
 
   // Log discovered skills
   for (const skill of skills) {
-    p.log.info(`Skill: ${pc.cyan(skill.installName)}`);
+    p.log.info(`技能: ${pc.cyan(skill.installName)}`);
     p.log.message(pc.dim(skill.description));
     if (skill.files.size > 1) {
-      p.log.message(pc.dim(`  Files: ${Array.from(skill.files.keys()).join(', ')}`));
+      p.log.message(pc.dim(`  文件: ${Array.from(skill.files.keys()).join(', ')}`));
     }
   }
 
   if (options.list) {
     console.log();
-    p.log.step(pc.bold('Available Skills'));
+    p.log.step(pc.bold('可用技能'));
     for (const skill of skills) {
       p.log.message(`  ${pc.cyan(skill.installName)}`);
       p.log.message(`    ${pc.dim(skill.description)}`);
       if (skill.files.size > 1) {
-        p.log.message(`    ${pc.dim(`Files: ${skill.files.size}`)}`);
+        p.log.message(`    ${pc.dim(`文件: ${skill.files.size}`)}`);
       }
     }
     console.log();
-    p.outro('Run without --list to install');
+    p.outro('不带 --list 运行以安装');
     process.exit(0);
   }
 
@@ -528,7 +528,7 @@ async function handleWellKnownSkills(
   if (options.skill?.includes('*')) {
     // --skill '*' selects all skills
     selectedSkills = skills;
-    p.log.info(`Installing all ${skills.length} skills`);
+    p.log.info(`正在安装所有 ${skills.length} 个技能`);
   } else if (options.skill && options.skill.length > 0) {
     selectedSkills = skills.filter((s) =>
       options.skill!.some(
@@ -539,8 +539,8 @@ async function handleWellKnownSkills(
     );
 
     if (selectedSkills.length === 0) {
-      p.log.error(`No matching skills found for: ${options.skill.join(', ')}`);
-      p.log.info('Available skills:');
+      p.log.error(`未找到匹配的技能: ${options.skill.join(', ')}`);
+      p.log.info('可用技能:');
       for (const s of skills) {
         p.log.message(`  - ${s.installName}`);
       }
@@ -549,10 +549,10 @@ async function handleWellKnownSkills(
   } else if (skills.length === 1) {
     selectedSkills = skills;
     const firstSkill = skills[0]!;
-    p.log.info(`Skill: ${pc.cyan(firstSkill.installName)}`);
+    p.log.info(`技能: ${pc.cyan(firstSkill.installName)}`);
   } else if (options.yes) {
     selectedSkills = skills;
-    p.log.info(`Installing all ${skills.length} skills`);
+    p.log.info(`正在安装所有 ${skills.length} 个技能`);
   } else {
     // Prompt user to select skills
     const skillChoices = skills.map((s) => ({
@@ -562,13 +562,13 @@ async function handleWellKnownSkills(
     }));
 
     const selected = await multiselect({
-      message: 'Select skills to install',
+      message: '选择要安装的技能',
       options: skillChoices,
       required: true,
     });
 
     if (p.isCancel(selected)) {
-      p.cancel('Installation cancelled');
+      p.cancel('安装已取消');
       process.exit(0);
     }
 
@@ -582,29 +582,29 @@ async function handleWellKnownSkills(
   if (options.agent?.includes('*')) {
     // --agent '*' selects all agents
     targetAgents = validAgents as AgentType[];
-    p.log.info(`Installing to all ${targetAgents.length} agents`);
+    p.log.info(`正在安装到所有 ${targetAgents.length} 个 agents`);
   } else if (options.agent && options.agent.length > 0) {
     const invalidAgents = options.agent.filter((a) => !validAgents.includes(a));
 
     if (invalidAgents.length > 0) {
-      p.log.error(`Invalid agents: ${invalidAgents.join(', ')}`);
-      p.log.info(`Valid agents: ${validAgents.join(', ')}`);
+      p.log.error(`无效的 agents: ${invalidAgents.join(', ')}`);
+      p.log.info(`有效的 agents: ${validAgents.join(', ')}`);
       process.exit(1);
     }
 
     targetAgents = options.agent as AgentType[];
   } else {
-    spinner.start('Loading agents...');
+    spinner.start('正在加载 agents...');
     const installedAgents = await detectInstalledAgents();
     const totalAgents = Object.keys(agents).length;
-    spinner.stop(`${totalAgents} agents`);
+    spinner.stop(`${totalAgents} 个 agents`);
 
     if (installedAgents.length === 0) {
       if (options.yes) {
         targetAgents = validAgents as AgentType[];
-        p.log.info('Installing to all agents');
+        p.log.info('正在安装到所有 agents');
       } else {
-        p.log.info('Select agents to install skills to');
+        p.log.info('选择要安装技能的 agents');
 
         const allAgentChoices = Object.entries(agents).map(([key, config]) => ({
           value: key as AgentType,
@@ -612,13 +612,10 @@ async function handleWellKnownSkills(
         }));
 
         // Use helper to prompt with search
-        const selected = await promptForAgents(
-          'Which agents do you want to install to?',
-          allAgentChoices
-        );
+        const selected = await promptForAgents('选择要安装到的 agents?', allAgentChoices);
 
         if (p.isCancel(selected)) {
-          p.cancel('Installation cancelled');
+          p.cancel('安装已取消');
           process.exit(0);
         }
 
@@ -629,17 +626,17 @@ async function handleWellKnownSkills(
       targetAgents = ensureUniversalAgents(installedAgents);
       if (installedAgents.length === 1) {
         const firstAgent = installedAgents[0]!;
-        p.log.info(`Installing to: ${pc.cyan(agents[firstAgent].displayName)}`);
+        p.log.info(`正在安装到: ${pc.cyan(agents[firstAgent].displayName)}`);
       } else {
         p.log.info(
-          `Installing to: ${installedAgents.map((a) => pc.cyan(agents[a].displayName)).join(', ')}`
+          `正在安装到: ${installedAgents.map((a) => pc.cyan(agents[a].displayName)).join(', ')}`
         );
       }
     } else {
       const selected = await selectAgentsInteractive({ global: options.global });
 
       if (p.isCancel(selected)) {
-        p.cancel('Installation cancelled');
+        p.cancel('安装已取消');
         process.exit(0);
       }
 
@@ -654,23 +651,23 @@ async function handleWellKnownSkills(
 
   if (options.global === undefined && !options.yes && supportsGlobal) {
     const scope = await p.select({
-      message: 'Installation scope',
+      message: '安装范围',
       options: [
         {
           value: false,
-          label: 'Project',
-          hint: 'Install in current directory (committed with your project)',
+          label: '项目',
+          hint: '安装到当前目录 (随项目提交)',
         },
         {
           value: true,
-          label: 'Global',
-          hint: 'Install in home directory (available across all projects)',
+          label: '全局',
+          hint: '安装到主目录 (所有项目可用)',
         },
       ],
     });
 
     if (p.isCancel(scope)) {
-      p.cancel('Installation cancelled');
+      p.cancel('安装已取消');
       process.exit(0);
     }
 
@@ -686,19 +683,19 @@ async function handleWellKnownSkills(
 
   if (!options.copy && !options.yes && uniqueDirs.size > 1) {
     const modeChoice = await p.select({
-      message: 'Installation method',
+      message: '安装方式',
       options: [
         {
           value: 'symlink',
-          label: 'Symlink (Recommended)',
-          hint: 'Single source of truth, easy updates',
+          label: '符号链接 (推荐)',
+          hint: '单一数据源，易于更新',
         },
-        { value: 'copy', label: 'Copy to all agents', hint: 'Independent copies for each agent' },
+        { value: 'copy', label: '复制到所有 agents', hint: '每个 agent 独立副本' },
       ],
     });
 
     if (p.isCancel(modeChoice)) {
-      p.cancel('Installation cancelled');
+      p.cancel('安装已取消');
       process.exit(0);
     }
 
@@ -740,7 +737,7 @@ async function handleWellKnownSkills(
     summaryLines.push(`${pc.cyan(shortCanonical)}`);
     summaryLines.push(...buildAgentSummaryLines(targetAgents, installMode));
     if (skill.files.size > 1) {
-      summaryLines.push(`  ${pc.dim('files:')} ${skill.files.size}`);
+      summaryLines.push(`  ${pc.dim('文件:')} ${skill.files.size}`);
     }
 
     const skillOverwrites = overwriteStatus.get(skill.installName);
@@ -749,23 +746,23 @@ async function handleWellKnownSkills(
       .map((a) => agents[a].displayName);
 
     if (overwriteAgents.length > 0) {
-      summaryLines.push(`  ${pc.yellow('overwrites:')} ${formatList(overwriteAgents)}`);
+      summaryLines.push(`  ${pc.yellow('覆盖:')} ${formatList(overwriteAgents)}`);
     }
   }
 
   console.log();
-  p.note(summaryLines.join('\n'), 'Installation Summary');
+  p.note(summaryLines.join('\n'), '安装摘要');
 
   if (!options.yes) {
-    const confirmed = await p.confirm({ message: 'Proceed with installation?' });
+    const confirmed = await p.confirm({ message: '继续安装?' });
 
     if (p.isCancel(confirmed) || !confirmed) {
-      p.cancel('Installation cancelled');
+      p.cancel('安装已取消');
       process.exit(0);
     }
   }
 
-  spinner.start('Installing skills...');
+  spinner.start('正在安装技能...');
 
   const results: {
     skill: string;
@@ -792,7 +789,7 @@ async function handleWellKnownSkills(
     }
   }
 
-  spinner.stop('Installation complete');
+  spinner.stop('安装完成');
 
   console.log();
   const successful = results.filter((r) => r.success);
@@ -913,7 +910,7 @@ async function handleWellKnownSkills(
 
       if (firstResult.mode === 'copy') {
         // Copy mode: show skill name and list all agent paths
-        resultLines.push(`${pc.green('✓')} ${skillName} ${pc.dim('(copied)')}`);
+        resultLines.push(`${pc.green('✓')} ${skillName} ${pc.dim('(已复制)')}`);
         for (const r of skillResults) {
           const shortPath = shortenPath(r.path, cwd);
           resultLines.push(`  ${pc.dim('→')} ${shortPath}`);
@@ -930,32 +927,26 @@ async function handleWellKnownSkills(
       }
     }
 
-    const title = pc.green(`Installed ${skillCount} skill${skillCount !== 1 ? 's' : ''}`);
+    const title = pc.green(`已安装 ${skillCount} 个技能`);
     p.note(resultLines.join('\n'), title);
 
     // Show symlink failure warning (only for symlink mode)
     if (symlinkFailures.length > 0) {
-      p.log.warn(pc.yellow(`Symlinks failed for: ${formatList(copiedAgents)}`));
-      p.log.message(
-        pc.dim(
-          '  Files were copied instead. On Windows, enable Developer Mode for symlink support.'
-        )
-      );
+      p.log.warn(pc.yellow(`符号链接失败: ${formatList(copiedAgents)}`));
+      p.log.message(pc.dim('  已改用文件复制。在 Windows 上，启用开发者模式以支持符号链接。'));
     }
   }
 
   if (failed.length > 0) {
     console.log();
-    p.log.error(pc.red(`Failed to install ${failed.length}`));
+    p.log.error(pc.red(`安装失败 ${failed.length}`));
     for (const r of failed) {
       p.log.message(`  ${pc.red('✗')} ${r.skill} → ${r.agent}: ${pc.dim(r.error)}`);
     }
   }
 
   console.log();
-  p.outro(
-    pc.green('Done!') + pc.dim('  Review skills before use; they run with full agent permissions.')
-  );
+  p.outro(pc.green('完成!') + pc.dim('  使用前请检查技能；它们以完整 agent 权限运行。'));
 
   // Prompt for find-skills after successful install
   await promptForFindSkills(options, targetAgents);
@@ -975,14 +966,12 @@ export async function runAdd(args: string[], options: AddOptions = {}): Promise<
 
   if (!source) {
     console.log();
-    console.log(
-      pc.bgRed(pc.white(pc.bold(' ERROR '))) + ' ' + pc.red('Missing required argument: source')
-    );
+    console.log(pc.bgRed(pc.white(pc.bold(' 错误 '))) + ' ' + pc.red('缺少必需参数: source'));
     console.log();
-    console.log(pc.dim('  Usage:'));
+    console.log(pc.dim('  用法:'));
     console.log(`    ${pc.cyan('npx skills add')} ${pc.yellow('<source>')} ${pc.dim('[options]')}`);
     console.log();
-    console.log(pc.dim('  Example:'));
+    console.log(pc.dim('  示例:'));
     console.log(`    ${pc.cyan('npx skills add')} ${pc.yellow('vercel-labs/agent-skills')}`);
     console.log();
     process.exit(1);
@@ -997,7 +986,7 @@ export async function runAdd(args: string[], options: AddOptions = {}): Promise<
 
       const spinner = p.spinner();
       spinner.start(
-        `Fetching ${skillRef.author}/${skillRef.name}@${skillRef.version} from custom server...`
+        `从自定义服务器获取 ${skillRef.author}/${skillRef.name}@${skillRef.version}...`
       );
 
       try {
@@ -1007,7 +996,7 @@ export async function runAdd(args: string[], options: AddOptions = {}): Promise<
           skillRef.version
         );
         if (!downloadResult) {
-          spinner.stop(pc.red('Failed to download skill'));
+          spinner.stop(pc.red('下载技能失败'));
           process.exit(1);
         }
 
@@ -1023,7 +1012,7 @@ export async function runAdd(args: string[], options: AddOptions = {}): Promise<
           repoPath: `${skillRef.author}/${skillRef.name}`,
         };
 
-        spinner.stop(pc.green('Skill downloaded'));
+        spinner.stop(pc.green('技能已下载'));
 
         // Detect installed agents
         const installedAgents = await detectInstalledAgents();
@@ -1031,15 +1020,15 @@ export async function runAdd(args: string[], options: AddOptions = {}): Promise<
         // Select target agents
         let targetAgents: AgentType[];
         if (installedAgents.length === 0) {
-          p.log.error('No agents found');
+          p.log.error('未找到 agents');
           process.exit(1);
         } else if (installedAgents.length === 1 || options.yes) {
           targetAgents = ensureUniversalAgents(installedAgents);
           if (installedAgents.length === 1) {
-            p.log.info(`Installing to: ${pc.cyan(agents[installedAgents[0]!].displayName)}`);
+            p.log.info(`正在安装到: ${pc.cyan(agents[installedAgents[0]!].displayName)}`);
           } else {
             p.log.info(
-              `Installing to: ${installedAgents.map((a) => pc.cyan(agents[a].displayName)).join(', ')}`
+              `正在安装到: ${installedAgents.map((a) => pc.cyan(agents[a].displayName)).join(', ')}`
             );
           }
         } else if (options.agent && options.agent.length > 0) {
@@ -1047,7 +1036,7 @@ export async function runAdd(args: string[], options: AddOptions = {}): Promise<
         } else {
           const selected = await selectAgentsInteractive({ global: options.global });
           if (p.isCancel(selected)) {
-            p.cancel('Installation cancelled');
+            p.cancel('安装已取消');
             process.exit(0);
           }
           targetAgents = selected as AgentType[];
@@ -1058,14 +1047,14 @@ export async function runAdd(args: string[], options: AddOptions = {}): Promise<
         const supportsGlobal = targetAgents.some((a) => agents[a].globalSkillsDir !== undefined);
         if (options.global === undefined && !options.yes && supportsGlobal) {
           const scope = await p.select({
-            message: 'Installation scope',
+            message: '安装范围',
             options: [
-              { value: false, label: 'Project', hint: 'Install in current directory' },
-              { value: true, label: 'Global', hint: 'Install in home directory' },
+              { value: false, label: '项目', hint: '安装到当前目录' },
+              { value: true, label: '全局', hint: '安装到主目录' },
             ],
           });
           if (p.isCancel(scope)) {
-            p.cancel('Installation cancelled');
+            p.cancel('安装已取消');
             process.exit(0);
           }
           installGlobally = scope as boolean;
@@ -1076,14 +1065,14 @@ export async function runAdd(args: string[], options: AddOptions = {}): Promise<
         const uniqueDirs = new Set(targetAgents.map((a) => agents[a].skillsDir));
         if (!options.copy && !options.yes && uniqueDirs.size > 1) {
           const modeChoice = await p.select({
-            message: 'Installation method',
+            message: '安装方式',
             options: [
-              { value: 'symlink', label: 'Symlink (Recommended)', hint: 'Single source of truth' },
-              { value: 'copy', label: 'Copy to all agents', hint: 'Independent copies' },
+              { value: 'symlink', label: '符号链接 (推荐)', hint: '单一数据源' },
+              { value: 'copy', label: '复制到所有 agents', hint: '独立副本' },
             ],
           });
           if (p.isCancel(modeChoice)) {
-            p.cancel('Installation cancelled');
+            p.cancel('安装已取消');
             process.exit(0);
           }
           installMode = modeChoice as InstallMode;
@@ -1098,21 +1087,21 @@ export async function runAdd(args: string[], options: AddOptions = {}): Promise<
         const shortCanonical = shortenPath(canonicalPath, cwd);
         summaryLines.push(`${pc.cyan(shortCanonical)}`);
         summaryLines.push(...buildAgentSummaryLines(targetAgents, installMode));
-        summaryLines.push(`  ${pc.dim('files:')} ${blobSkill.files.length}`);
+        summaryLines.push(`  ${pc.dim('文件:')} ${blobSkill.files.length}`);
         console.log();
-        p.note(summaryLines.join('\n'), 'Installation Summary');
+        p.note(summaryLines.join('\n'), '安装摘要');
 
         // Confirm installation
         if (!options.yes) {
-          const confirmed = await p.confirm({ message: 'Proceed with installation?' });
+          const confirmed = await p.confirm({ message: '继续安装?' });
           if (p.isCancel(confirmed) || !confirmed) {
-            p.cancel('Installation cancelled');
+            p.cancel('安装已取消');
             process.exit(0);
           }
         }
 
         // Install
-        spinner.start('Installing skills...');
+        spinner.start('正在安装技能...');
         const results: { skill: string; agent: AgentType; success: boolean; error?: string }[] = [];
 
         for (const agent of targetAgents) {
@@ -1140,10 +1129,10 @@ export async function runAdd(args: string[], options: AddOptions = {}): Promise<
         }
 
         const failedCount = results.filter((r) => !r.success).length;
-        p.outro(failedCount === 0 ? pc.green('Done!') : pc.red(`${failedCount} failed`));
+        p.outro(failedCount === 0 ? pc.green('完成!') : pc.red(`${failedCount} 个失败`));
         return;
       } catch (err) {
-        spinner.stop(pc.red(`Error: ${err}`));
+        spinner.stop(pc.red(`错误: ${err}`));
         process.exit(1);
       }
     }
@@ -1168,7 +1157,7 @@ export async function runAdd(args: string[], options: AddOptions = {}): Promise<
   try {
     const spinner = p.spinner();
 
-    spinner.start('Parsing source...');
+    spinner.start('正在解析 source...');
     const parsed = parseSource(source);
     spinner.stop(
       `Source: ${parsed.type === 'local' ? parsed.localPath! : parsed.url}${parsed.ref ? ` @ ${pc.yellow(parsed.ref)}` : ''}${parsed.subpath ? ` (${parsed.subpath})` : ''}${parsed.skillFilter ? ` ${pc.dim('@')}${pc.cyan(parsed.skillFilter)}` : ''}`
@@ -1179,18 +1168,14 @@ export async function runAdd(args: string[], options: AddOptions = {}): Promise<
     const sourceOwner = ownerRepoRaw?.split('/')[0]?.toLowerCase();
     if (sourceOwner === 'openclaw' && !options.dangerouslyAcceptOpenclawRisks) {
       console.log();
-      p.log.warn(pc.yellow(pc.bold('⚠ OpenClaw skills are unverified community submissions.')));
-      p.log.message(
-        pc.yellow(
-          'This source contains user-submitted skills that have not been reviewed for safety or quality.'
-        )
-      );
-      p.log.message(pc.yellow('Skills run with full agent permissions and could be malicious.'));
+      p.log.warn(pc.yellow(pc.bold('⚠ OpenClaw 技能是未经审核的社区提交。')));
+      p.log.message(pc.yellow('此来源包含未经安全或质量审查的用户提交技能。'));
+      p.log.message(pc.yellow('技能以完整 agent 权限运行，可能存在恶意。'));
       console.log();
       p.log.message(
-        `If you understand the risks, re-run with:\n\n  ${pc.cyan(`npx skills add ${source} --dangerously-accept-openclaw-risks`)}\n`
+        `如果您了解风险，请使用以下命令重新运行:\n\n  ${pc.cyan(`npx skills add ${source} --dangerously-accept-openclaw-risks`)}\n`
       );
-      p.outro(pc.red('Installation blocked'));
+      p.outro(pc.red('安装已阻止'));
       process.exit(1);
     }
 
@@ -1218,15 +1203,15 @@ export async function runAdd(args: string[], options: AddOptions = {}): Promise<
 
     if (parsed.type === 'local') {
       // Use local path directly, no cloning needed
-      spinner.start('Validating local path...');
+      spinner.start('验证本地路径...');
       if (!existsSync(parsed.localPath!)) {
-        spinner.stop(pc.red('Path not found'));
-        p.outro(pc.red(`Local path does not exist: ${parsed.localPath}`));
+        spinner.stop(pc.red('路径未找到'));
+        p.outro(pc.red(`本地路径不存在: ${parsed.localPath}`));
         process.exit(1);
       }
-      spinner.stop('Local path validated');
+      spinner.stop('本地路径已验证');
 
-      spinner.start('Discovering skills...');
+      spinner.start('发现技能...');
       skills = await discoverSkills(parsed.localPath!, parsed.subpath, {
         includeInternal,
         fullDepth: options.fullDepth,
@@ -1238,7 +1223,7 @@ export async function runAdd(args: string[], options: AddOptions = {}): Promise<
       const ownerRepo = getOwnerRepo(parsed);
       const owner = ownerRepo?.split('/')[0]?.toLowerCase();
       if (ownerRepo && owner && BLOB_ALLOWED_OWNERS.includes(owner)) {
-        spinner.start('Fetching skills...');
+        spinner.start('正在获取技能...');
         const token = getGitHubToken();
         blobResult = await tryBlobInstall(ownerRepo, {
           subpath: parsed.subpath,
@@ -1248,7 +1233,7 @@ export async function runAdd(args: string[], options: AddOptions = {}): Promise<
           includeInternal,
         });
         if (!blobResult) {
-          spinner.stop(pc.dim('Falling back to clone...'));
+          spinner.stop(pc.dim('回退到克隆...'));
         }
       }
 
@@ -1257,11 +1242,11 @@ export async function runAdd(args: string[], options: AddOptions = {}): Promise<
         spinner.stop(`Found ${pc.green(skills.length)} skill${skills.length > 1 ? 's' : ''}`);
       } else {
         // Blob failed — fall back to git clone
-        spinner.start('Cloning repository...');
+        spinner.start('正在克隆仓库...');
         tempDir = await cloneRepo(parsed.url, parsed.ref);
-        spinner.stop('Repository cloned');
+        spinner.stop('仓库已克隆');
 
-        spinner.start('Discovering skills...');
+        spinner.start('发现技能...');
         skills = await discoverSkills(tempDir, parsed.subpath, {
           includeInternal,
           fullDepth: options.fullDepth,
@@ -1281,10 +1266,8 @@ export async function runAdd(args: string[], options: AddOptions = {}): Promise<
     }
 
     if (skills.length === 0) {
-      spinner.stop(pc.red('No skills found'));
-      p.outro(
-        pc.red('No valid skills found. Skills require a SKILL.md with name and description.')
-      );
+      spinner.stop(pc.red('未找到技能'));
+      p.outro(pc.red('未找到有效技能。技能需要包含名称和描述的 SKILL.md。'));
       await cleanup(tempDir);
       process.exit(1);
     }
@@ -1295,7 +1278,7 @@ export async function runAdd(args: string[], options: AddOptions = {}): Promise<
 
     if (options.list) {
       console.log();
-      p.log.step(pc.bold('Available Skills'));
+      p.log.step(pc.bold('可用技能'));
 
       // Group available skills by plugin for list output
       const groupedSkills: Record<string, Skill[]> = {};
@@ -1338,7 +1321,7 @@ export async function runAdd(args: string[], options: AddOptions = {}): Promise<
       }
 
       console.log();
-      p.outro('Use --skill <name> to install specific skills');
+      p.outro('使用 --skill <name> 安装特定技能');
       await cleanup(tempDir);
       process.exit(0);
     }

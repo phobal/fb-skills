@@ -138,18 +138,16 @@ export async function runSync(args: string[], options: SyncOptions = {}): Promis
   const spinner = p.spinner();
 
   // 1. Discover skills from node_modules
-  spinner.start('Scanning node_modules for skills...');
+  spinner.start('正在扫描 node_modules 中的技能...');
   const discoveredSkills = await discoverNodeModuleSkills(cwd);
 
   if (discoveredSkills.length === 0) {
-    spinner.stop(pc.yellow('No skills found'));
-    p.outro(pc.dim('No SKILL.md files found in node_modules.'));
+    spinner.stop(pc.yellow('未找到技能'));
+    p.outro(pc.dim('在 node_modules 中未找到 SKILL.md 文件。'));
     return;
   }
 
-  spinner.stop(
-    `Found ${pc.green(String(discoveredSkills.length))} skill${discoveredSkills.length > 1 ? 's' : ''} in node_modules`
-  );
+  spinner.stop(`在 node_modules 中找到 ${pc.green(String(discoveredSkills.length))} 个技能`);
 
   // Show discovered skills
   for (const skill of discoveredSkills) {
@@ -182,19 +180,17 @@ export async function runSync(args: string[], options: SyncOptions = {}): Promis
     }
 
     if (upToDate.length > 0) {
-      p.log.info(
-        pc.dim(`${upToDate.length} skill${upToDate.length !== 1 ? 's' : ''} already up to date`)
-      );
+      p.log.info(pc.dim(`${upToDate.length} 个技能已是最新版本`));
     }
 
     if (toInstall.length === 0) {
       console.log();
-      p.outro(pc.green('All skills are up to date.'));
+      p.outro(pc.green('所有技能都是最新版本。'));
       return;
     }
   }
 
-  p.log.info(`${toInstall.length} skill${toInstall.length !== 1 ? 's' : ''} to install/update`);
+  p.log.info(`需要安装/更新 ${toInstall.length} 个技能`);
 
   // 3. Select agents
   let targetAgents: AgentType[];
@@ -207,21 +203,21 @@ export async function runSync(args: string[], options: SyncOptions = {}): Promis
   } else if (options.agent && options.agent.length > 0) {
     const invalidAgents = options.agent.filter((a) => !validAgents.includes(a));
     if (invalidAgents.length > 0) {
-      p.log.error(`Invalid agents: ${invalidAgents.join(', ')}`);
-      p.log.info(`Valid agents: ${validAgents.join(', ')}`);
+      p.log.error(`无效的 agents: ${invalidAgents.join(', ')}`);
+      p.log.info(`有效的 agents: ${validAgents.join(', ')}`);
       process.exit(1);
     }
     targetAgents = options.agent as AgentType[];
   } else {
-    spinner.start('Loading agents...');
+    spinner.start('正在加载 agents...');
     const installedAgents = await detectInstalledAgents();
     const totalAgents = Object.keys(agents).length;
-    spinner.stop(`${totalAgents} agents`);
+    spinner.stop(`${totalAgents} 个 agents`);
 
     if (installedAgents.length === 0) {
       if (options.yes) {
         targetAgents = universalAgents;
-        p.log.info('Installing to universal agents');
+        p.log.info('正在安装到 universal agents');
       } else {
         const otherAgents = getNonUniversalAgents();
 
@@ -232,7 +228,7 @@ export async function runSync(args: string[], options: SyncOptions = {}): Promis
         }));
 
         const selected = await searchMultiselect({
-          message: 'Which agents do you want to install to?',
+          message: '选择要安装到的 agents?',
           items: otherChoices,
           initialSelected: [],
           lockedSection: {
@@ -245,7 +241,7 @@ export async function runSync(args: string[], options: SyncOptions = {}): Promis
         });
 
         if (isCancelled(selected)) {
-          p.cancel('Sync cancelled');
+          p.cancel('同步已取消');
           process.exit(0);
         }
 
@@ -269,7 +265,7 @@ export async function runSync(args: string[], options: SyncOptions = {}): Promis
       }));
 
       const selected = await searchMultiselect({
-        message: 'Which agents do you want to install to?',
+        message: '选择要安装到的 agents?',
         items: otherChoices,
         initialSelected: installedAgents.filter((a) => !universalAgents.includes(a)),
         lockedSection: {
@@ -282,7 +278,7 @@ export async function runSync(args: string[], options: SyncOptions = {}): Promis
       });
 
       if (isCancelled(selected)) {
-        p.cancel('Sync cancelled');
+        p.cancel('同步已取消');
         process.exit(0);
       }
 
@@ -300,19 +296,19 @@ export async function runSync(args: string[], options: SyncOptions = {}): Promis
   }
 
   console.log();
-  p.note(summaryLines.join('\n'), 'Sync Summary');
+  p.note(summaryLines.join('\n'), '同步摘要');
 
   if (!options.yes) {
-    const confirmed = await p.confirm({ message: 'Proceed with sync?' });
+    const confirmed = await p.confirm({ message: '确认同步?' });
 
     if (p.isCancel(confirmed) || !confirmed) {
-      p.cancel('Sync cancelled');
+      p.cancel('同步已取消');
       process.exit(0);
     }
   }
 
   // 5. Install skills (always project-scoped, always symlink)
-  spinner.start('Syncing skills...');
+  spinner.start('正在同步技能...');
 
   const results: Array<{
     skill: string;
@@ -343,7 +339,7 @@ export async function runSync(args: string[], options: SyncOptions = {}): Promis
     }
   }
 
-  spinner.stop('Sync complete');
+  spinner.stop('同步完成');
 
   // 6. Update local lock file
   const successful = results.filter((r) => r.success);
@@ -394,13 +390,13 @@ export async function runSync(args: string[], options: SyncOptions = {}): Promis
     }
 
     const skillCount = bySkill.size;
-    const title = pc.green(`Synced ${skillCount} skill${skillCount !== 1 ? 's' : ''}`);
+    const title = pc.green(`已同步 ${skillCount} 个技能`);
     p.note(resultLines.join('\n'), title);
   }
 
   if (failed.length > 0) {
     console.log();
-    p.log.error(pc.red(`Failed to install ${failed.length}`));
+    p.log.error(pc.red(`安装失败 ${failed.length}`));
     for (const r of failed) {
       p.log.message(`  ${pc.red('✗')} ${r.skill} → ${r.agent}: ${pc.dim(r.error)}`);
     }
@@ -415,9 +411,7 @@ export async function runSync(args: string[], options: SyncOptions = {}): Promis
   });
 
   console.log();
-  p.outro(
-    pc.green('Done!') + pc.dim('  Review skills before use; they run with full agent permissions.')
-  );
+  p.outro(pc.green('完成!') + pc.dim('  使用前请检查技能；它们以完整 agent 权限运行。'));
 }
 
 export function parseSyncOptions(args: string[]): { options: SyncOptions } {

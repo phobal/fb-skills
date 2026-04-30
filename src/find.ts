@@ -102,16 +102,16 @@ async function runSearchPrompt(initialQuery = ''): Promise<SearchSkill | null> {
 
     // Search input line with cursor
     const cursor = `${BOLD}_${RESET}`;
-    lines.push(`${TEXT}Search skills:${RESET} ${query}${cursor}`);
+    lines.push(`${TEXT}搜索技能:${RESET} ${query}${cursor}`);
     lines.push('');
 
     // Results - keep showing existing results while loading new ones
     if (!query || query.length < 2) {
-      lines.push(`${DIM}Start typing to search (min 2 chars)${RESET}`);
+      lines.push(`${DIM}开始输入以搜索 (最少2个字符)${RESET}`);
     } else if (results.length === 0 && loading) {
-      lines.push(`${DIM}Searching...${RESET}`);
+      lines.push(`${DIM}搜索中...${RESET}`);
     } else if (results.length === 0) {
-      lines.push(`${DIM}No skills found${RESET}`);
+      lines.push(`${DIM}未找到技能${RESET}`);
     } else {
       const maxVisible = 8;
       const visible = results.slice(0, maxVisible);
@@ -131,7 +131,7 @@ async function runSearchPrompt(initialQuery = ''): Promise<SearchSkill | null> {
     }
 
     lines.push('');
-    lines.push(`${DIM}up/down navigate | enter select | esc cancel${RESET}`);
+    lines.push(`${DIM}↑/↓ 导航 | 回车 选择 | esc 取消${RESET}`);
 
     // Write each line
     for (const line of lines) {
@@ -270,7 +270,7 @@ async function isRepoPublic(owner: string, repo: string): Promise<boolean> {
 export async function runFind(args: string[]): Promise<void> {
   const query = args.join(' ');
   const isNonInteractive = !process.stdin.isTTY;
-  const agentTip = `${DIM}Tip: if running in a coding agent, follow these steps:${RESET}
+  const agentTip = `${DIM}提示: 如果在编码 agent 中运行，请按以下步骤操作:${RESET}
 ${DIM}  1) npx skills find [query]${RESET}
 ${DIM}  2) npx skills add <owner/repo@skill>${RESET}`;
 
@@ -286,11 +286,11 @@ ${DIM}  2) npx skills add <owner/repo@skill>${RESET}`;
     });
 
     if (results.length === 0) {
-      console.log(`${DIM}No skills found for "${query}"${RESET}`);
+      console.log(`${DIM}未找到 "${query}" 相关的技能${RESET}`);
       return;
     }
 
-    console.log(`${DIM}Install with${RESET} npx skills add <owner/repo@skill>`);
+    console.log(`${DIM}安装命令${RESET} npx skills add <owner/repo@skill>`);
     console.log();
 
     for (const skill of results.slice(0, 6)) {
@@ -321,7 +321,7 @@ ${DIM}  2) npx skills add <owner/repo@skill>${RESET}`;
   });
 
   if (!selected) {
-    console.log(`${DIM}Search cancelled${RESET}`);
+    console.log(`${DIM}搜索已取消${RESET}`);
     console.log();
     return;
   }
@@ -331,7 +331,7 @@ ${DIM}  2) npx skills add <owner/repo@skill>${RESET}`;
   const skillName = selected.name;
 
   console.log();
-  console.log(`${TEXT}Installing ${BOLD}${skillName}${RESET} from ${DIM}${pkg}${RESET}...`);
+  console.log(`${TEXT}正在安装 ${BOLD}${skillName}${RESET} 从 ${DIM}${pkg}${RESET}...`);
   console.log();
 
   // Run add directly since we're in the same CLI
@@ -342,11 +342,9 @@ ${DIM}  2) npx skills add <owner/repo@skill>${RESET}`;
 
   const info = getOwnerRepoFromString(pkg);
   if (info && (await isRepoPublic(info.owner, info.repo))) {
-    console.log(
-      `${DIM}View the skill at${RESET} ${TEXT}https://skills.sh/${selected.slug}${RESET}`
-    );
+    console.log(`${DIM}查看技能${RESET} ${TEXT}https://skills.sh/${selected.slug}${RESET}`);
   } else {
-    console.log(`${DIM}Discover more skills at${RESET} ${TEXT}https://skills.sh${RESET}`);
+    console.log(`${DIM}探索更多技能${RESET} ${TEXT}https://skills.sh${RESET}`);
   }
 
   console.log();

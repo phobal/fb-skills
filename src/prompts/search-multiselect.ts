@@ -120,23 +120,23 @@ export async function searchMultiselect<T>(
         // Locked section (universal agents)
         if (lockedSection && lockedSection.items.length > 0) {
           lines.push(`${S_BAR}`);
-          const lockedTitle = `${pc.bold(lockedSection.title)} ${pc.dim('── always included')}`;
+          const lockedTitle = `${pc.bold(lockedSection.title)} ${pc.dim('── 始终包含')}`;
           lines.push(`${S_BAR}  ${S_BAR_H}${S_BAR_H} ${lockedTitle} ${S_BAR_H.repeat(12)}`);
           for (const item of lockedSection.items) {
             lines.push(`${S_BAR}    ${S_BULLET} ${pc.bold(item.label)}`);
           }
           lines.push(`${S_BAR}`);
           lines.push(
-            `${S_BAR}  ${S_BAR_H}${S_BAR_H} ${pc.bold('Additional agents')} ${S_BAR_H.repeat(29)}`
+            `${S_BAR}  ${S_BAR_H}${S_BAR_H} ${pc.bold('其他 agents')} ${S_BAR_H.repeat(29)}`
           );
         }
 
         // Search input
-        const searchLine = `${S_BAR}  ${pc.dim('Search:')} ${query}${pc.inverse(' ')}`;
+        const searchLine = `${S_BAR}  ${pc.dim('搜索:')} ${query}${pc.inverse(' ')}`;
         lines.push(searchLine);
 
         // Hint
-        lines.push(`${S_BAR}  ${pc.dim('↑↓ move, space select, enter confirm')}`);
+        lines.push(`${S_BAR}  ${pc.dim('↑↓ 移动, 空格选择, 回车确认')}`);
         lines.push(`${S_BAR}`);
 
         // Items
@@ -148,7 +148,7 @@ export async function searchMultiselect<T>(
         const visibleItems = filtered.slice(visibleStart, visibleEnd);
 
         if (filtered.length === 0) {
-          lines.push(`${S_BAR}  ${pc.dim('No matches found')}`);
+          lines.push(`${S_BAR}  ${pc.dim('未找到匹配项')}`);
         } else {
           for (let i = 0; i < visibleItems.length; i++) {
             const item = visibleItems[i]!;
@@ -169,8 +169,8 @@ export async function searchMultiselect<T>(
           const hiddenAfter = filtered.length - visibleEnd;
           if (hiddenBefore > 0 || hiddenAfter > 0) {
             const parts: string[] = [];
-            if (hiddenBefore > 0) parts.push(`↑ ${hiddenBefore} more`);
-            if (hiddenAfter > 0) parts.push(`↓ ${hiddenAfter} more`);
+            if (hiddenBefore > 0) parts.push(`↑ ${hiddenBefore} 更多`);
+            if (hiddenAfter > 0) parts.push(`↓ ${hiddenAfter} 更多`);
             lines.push(`${S_BAR}  ${pc.dim(parts.join('  '))}`);
           }
         }
@@ -182,13 +182,13 @@ export async function searchMultiselect<T>(
           ...items.filter((item) => selected.has(item.value)).map((item) => item.label),
         ];
         if (allSelectedLabels.length === 0) {
-          lines.push(`${S_BAR}  ${pc.dim('Selected: (none)')}`);
+          lines.push(`${S_BAR}  ${pc.dim('已选择: (无)')}`);
         } else {
           const summary =
             allSelectedLabels.length <= 3
               ? allSelectedLabels.join(', ')
-              : `${allSelectedLabels.slice(0, 3).join(', ')} +${allSelectedLabels.length - 3} more`;
-          lines.push(`${S_BAR}  ${pc.green('Selected:')} ${summary}`);
+              : `${allSelectedLabels.slice(0, 3).join(', ')} +${allSelectedLabels.length - 3} 更多`;
+          lines.push(`${S_BAR}  ${pc.green('已选择:')} ${summary}`);
         }
 
         lines.push(`${pc.dim('└')}`);
